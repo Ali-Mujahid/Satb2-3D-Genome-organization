@@ -1,1 +1,55 @@
+####### BamCompare using deeptools ########
+#!/bin/bash
 
+#SBATCH --job-name=bcomp
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=12G
+#SBATCH --mail-type=ALL
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=08:35:00
+
+chip=$1
+Input=$2
+size=$3
+
+#export PATH="/apps/python3/3.9.0/bin/:$PATH"
+
+module load deeptools
+#10.02.2022 new normalization with RPKM
+bamCompare -b1 $chip -b2 $Input -p 16 --effectiveGenomeSize 2700000000  --minMappingQuality 10 -bs 50 --scaleFactorsMethod None  -o $size.norm.bamCompare.bw --ignoreDuplicates --normalizeUsing RPKM
+
+######## Bam coverage #######
+#!/bin/bash
+
+#SBATCH --job-name=BAMTOBIg
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=5000Mb
+#SBATCH --mail-user=mujahid.ali@univie.ac.at
+#SBATCH --output=Tm-%j.out
+#SBATCH --error=Tm-%j.err
+#SBATCH --time=01:30:00
+
+module load deeptools
+
+#bamCoverage --bam mm10.fa.cKO1_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO1_BIC.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.cKO1_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO1_NBQX.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.cKO2_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO2_BIC.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.cKO2_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO2_NBQX.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.cKO3_BIC.uniq.sorted.rmdup.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO3_BIC.u
+niq.sorted.rmdup.bam.bw
+#bamCoverage --bam mm10.fa.cKO3_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.cKO3_NBQX.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx1_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx1_BIC.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx1_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx1_NBQX.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx2_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx2_BIC.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx2_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx2_NBQX.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx3_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx3_BIC.uniq.sorted.rmdup.DS.bam.bw
+#bamCoverage --bam mm10.fa.flx3_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o mm10.fa.flx3_NBQX.uniq.sorted.rmdup.DS.bam.bw
+
+#bamCoverage --bam mm10.fa.flx2_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --effectiveGenomeSize 2700000000 -o mm10.fa.flx2_BIC.uniq.sorted.rmdup.DS.noRPGC.bam
+#bamCoverage --bam mm10.fa.flx3_BIC.uniq.sorted.rmdup.DS.bam --binSize 50 --effectiveGenomeSize 2700000000 -o mm10.fa.flx3_BIC.uniq.sorted.rmdup.DS.bam.noRPGC.bw
+#bamCoverage --bam mm10.fa.flx3_NBQX.uniq.sorted.rmdup.DS.bam --binSize 50 --effectiveGenomeSize 2700000000 -o mm10.fa.flx3_NBQX.uniq.sorted.rmdup.DS.bam.noRPGC.bw
+#bamCoverage --bam flx.BIC_NBQX_merged.bam --binSize 50 --effectiveGenomeSize 2700000000 -o flx.BIC_NBQX_merged.bam.bw
+bamCoverage --bam cKO.BIC__NBQX_merged.bam --binSize 50 --effectiveGenomeSize 2700000000 -o cKO.BIC__NBQX_merged.bam.bw
