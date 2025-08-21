@@ -1,1 +1,18 @@
+#!/bin/bash
+
+#SBATCH --job-name=matrix
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=15G
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=03:15:00
+
+module load deeptools
+#conda activate deeptools_env
+
+#computeMatrix reference-point -S flx.BIC_NBQX_merged.bam.bw cKO.BIC__NBQX_merged.bam.bw -R cKO_specific.INV.OCRs.txt -a 5000 -b 5000 --missingDataAsZero  -bs 50 --sortRegions descend -o cKO_specific.INV.OCRs.gz --sample
+sLabel flx.BIC_NBQX cKO.BIC_NBQX
+
+plotHeatmap -m cKO.INV.OCRS_vs_cov_BIC.NBQX.gz -o cKO.INV.OCRS_vs_cov_BIC.NBQX.pdf --colorMap RdBu_r --heatmapWidth 10 --heatmapHeight 100
 
