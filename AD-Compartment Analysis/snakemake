@@ -1,1 +1,95 @@
+module load snakemake
+conda activate hicexplorer_env
+conda activate deeptools_env
 
+snakemake --snakefile Snakefile --config window=100000 --cores 4 --use-conda
+/lisc/scratch/software/venv/bin/python process_pca_compD.V3.py
+process_pca_compD.V3.py: 
+
+import cooltools
+import numpy as np
+import cooler
+import pandas as pd
+from sklearn.decomposition import PCA
+
+def list_chromosomes(filepath):
+    clr = cooler.Cooler(filepath)
+    print(clr.chromnames)  # This will list all chromosome names available in the cooler file
+
+def make_pca_diff(clr, my_chrs):
+    partition = clr.extent(my_chrs)
+    lo, hi = partition
+    bins = clr.bins()[lo:hi]
+    C = clr.matrix(balance=False)[lo:hi, lo:hi]
+    C = np.nan_to_num(C)
+
+    # Remove features with zero variance
+    variances = C.var(axis=0)
+    non_zero_variance_mask = variances > 0
+    C = C[:, non_zero_variance_mask]
+
+    if C.size == 0:
+        print(f"Warning: Zero matrix detected for chromosome {my_chrs}. Skipping PCA.")
+        return pd.DataFrame()
+
+    # Perform PCA
+    pca = PCA(n_components=1)
+    pca.fit(C)
+    pca_components = pca.components_[0]
+
+    # Create a DataFrame with the results
+    result = bins[non_zero_variance_mask].copy()
+    result["PC1"] = pca_components
+    return result
+
+def make_pca_diff_trans(clr):
+    bins = clr.bins()[:]
+    C = clr.matrix(balance=False)[:, :]
+    C = np.nan_to_num(C)
+
+    # Remove features with zero variance
+    variances = C.var(axis=0)
+    non_zero_variance_mask = variances > 0
+    C = C[:, non_zero_variance_mask]
+
+    if C.size == 0:
+        print("Warning: Zero matrix detected for the whole genome. Skipping PCA.")
+        return pd.DataFrame()
+
+    # Perform PCA
+    pca = PCA(n_components=1)
+    pca.fit(C)
+    pca_components = pca.components_[0]
+
+    # Create a DataFrame with the results
+    result = bins[non_zero_variance_mask].copy()
+    result["PC1"] = pca_components
+    return result
+
+# Input and output filenames
+input_filename = "log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool"
+output_cis = "log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.test.cis"
+output_trans = "log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.test.trans"
+
+# Load the cooler file
+clr = cooler.Cooler(input_filename)
+my_chrs = clr.chromnames
+
+# Process each chromosome for cis interactions
+results = []
+for chrom in my_chrs:
+    result = make_pca_diff(clr, chrom)
+    if not result.empty:
+        results.append(result)
+if results:
+    results = pd.concat(results)
+    results.to_csv(output_cis, index=False, header=False, sep='\t')
+else:
+    print("No valid cis results to write.")
+
+# Process the whole genome for trans interactions
+results_trans = make_pca_diff_trans(clr)
+if not results_trans.empty:
+    results_trans.to_csv(output_trans, index=False, header=False, sep='\t')
+else:
+    print("No valid trans results to write.")
