@@ -1,1 +1,42 @@
+###conda activate hicexplorer_env
 
+pgt --tracks track.ini --region chr7:100-50000000 -o AD-compartment.chr7.pdf
+
+track.ini:
+
+[x-axis]
+where = top
+[bigwig]
+file = flxBIC.NBQX_differential_eigenvector_track_cis_E1_100000.bedGraph.wt.ICE.bw
+height = 2.5
+min_value = 0.05
+max_value = 0.8
+title = AD.flx
+color = #d53e4f
+file_type = bigwig
+
+[spacer]
+height = 0.1
+
+[bigwig]
+file = cKOBIC.NBQX_differential_eigenvector_track_cis_E1_100000.bedGraph.wt.ICE.bw
+height = 2.1
+min_value = 1
+max_value = 5
+title = AD.cKO
+color = #5e4fa2
+file_type = bigwig
+[spacer]
+height = 0.1
+
+[spacer]
+height = 0.1
+
+[bedgraph]
+file = gencode.vM10.annotation.gff3.Gene.ol.Great.bed
+style = exonarrow
+height = 0.5
+color = black
+title = genes
+file_type = bed
+prefered_name = gene_name
