@@ -1,1 +1,67 @@
+Rule 1:
+#!/bin/bash
 
+#SBATCH --job-name=matrix.rule1
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=10G
+#SBATCH --mail-type=ALL
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=00:30:00
+
+conda activate hicexplorer_env
+hicConvertFormat -m flx_BIC.allValidPairs_100000.cool -o flx_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+hicConvertFormat -m flx_NBQX.allValidPairs_100000.cool -o flx_NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+hicConvertFormat -m cKO_BIC.allValidPairs_100000.cool -o cKO_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+hicConvertFormat -m cKO_NBQX.allValidPairs_100000.cool -o cKO__NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+
+hicTransform --matrix flx_BIC.allValidPairs_100000.cool.h5 --outFileName OE.flx_BIC.allValidPairs_100000.cool.lm.h5 --method obs_exp_lieberman --perChromosome #obs_exp_lieberman
+hicTransform --matrix flx_NBQX.allValidPairs_100000.cool.h5 --outFileName OE.flx_NBQX.allValidPairs_100000.cool.lm.h5 --method obs_exp_lieberman --perChromosome #obs_exp_lieberman
+hicTransform --matrix cKO_BIC.allValidPairs_100000.cool.h5 --outFileName OE.cKO_BIC.allValidPairs_100000.cool.lm.h5 --method obs_exp_lieberman --perChromosome #obs_exp_lieberman
+hicTransform --matrix cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName OE.cKO__NBQX.allValidPairs_100000.cool.lm.h5 --method obs_exp_lieberman --perChromosome #obs_exp_lieberman
+
+hicCompareMatrices --matrices OE.flx_BIC.allValidPairs_100000.cool.lm.h5 OE.flx_NBQX.allValidPairs_100000.cool.lm.h5 --outFileName log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.lm.h5 --operation log2ratio
+hicCompareMatrices --matrices OE.cKO_BIC.allValidPairs_100000.cool.lm.h5 OE.cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.lm.h5 --operation log2ratio
+
+hicConvertFormat -m log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.lm.h5 -o log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.lm.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+hicConvertFormat -m log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.lm.h5 -o log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.lm.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+
+Rule 2:
+conda activate hicexplorer_env
+#hicConvertFormat -m flx_BIC.allValidPairs_100000.cool -o flx_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m flx_NBQX.allValidPairs_100000.cool -o flx_NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m cKO_BIC.allValidPairs_100000.cool -o cKO_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m cKO_NBQX.allValidPairs_100000.cool -o cKO__NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+
+#hicTransform --matrix flx_BIC.allValidPairs_100000.cool.h5 --outFileName OE.flx_BIC.allValidPairs_100000.cool.h5 --method obs_exp
+#hicTransform --matrix flx_NBQX.allValidPairs_100000.cool.h5 --outFileName OE.flx_NBQX.allValidPairs_100000.cool.h5 --method obs_exp
+hicTransform --matrix cKO_BIC.allValidPairs_100000.cool.h5 --outFileName OE.cKO_BIC.allValidPairs_100000.cool.h5 --method obs_exp_lieberman
+#hicTransform --matrix cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName OE.cKO__NBQX.allValidPairs_100000.cool.h5 --method obs_exp
+
+#hicCompareMatrices --matrices OE.flx_BIC.allValidPairs_100000.cool.h5 OE.flx_NBQX.allValidPairs_100000.cool.h5 --outFileName log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 --operation log2ratio
+#hicCompareMatrices --matrices OE.cKO_BIC.allValidPairs_100000.cool.h5 OE.cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 --operation log2ratio
+
+#hicConvertFormat -m log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 -o log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+#hicConvertFormat -m log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 -o log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+
+Rule 3:
+conda activate hicexplorer_env
+#hicConvertFormat -m flx_BIC.allValidPairs_100000.cool -o flx_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m flx_NBQX.allValidPairs_100000.cool -o flx_NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m cKO_BIC.allValidPairs_100000.cool -o cKO_BIC.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+#hicConvertFormat -m cKO_NBQX.allValidPairs_100000.cool -o cKO__NBQX.allValidPairs_100000.cool.h5 --outputFormat h5 --inputFormat cool --resolutions 100000
+
+#hicTransform --matrix flx_BIC.allValidPairs_100000.cool.h5 --outFileName OE.flx_BIC.allValidPairs_100000.cool.h5 --method obs_exp
+#hicTransform --matrix flx_NBQX.allValidPairs_100000.cool.h5 --outFileName OE.flx_NBQX.allValidPairs_100000.cool.h5 --method obs_exp
+#hicTransform --matrix cKO_BIC.allValidPairs_100000.cool.h5 --outFileName OE.cKO_BIC.allValidPairs_100000.cool.h5 --method obs_exp
+
+hicTransform --matrix cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName OE.cKO__NBQX.allValidPairs_100000.cool.h5 --method
+
+hicCompareMatrices --matrices OE.flx_BIC.allValidPairs_100000.cool.h5 OE.flx_NBQX.allValidPairs_100000.cool.h5 --outFileName log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 --operation log2ratio
+hicCompareMatrices --matrices OE.cKO_BIC.allValidPairs_100000.cool.h5 OE.cKO__NBQX.allValidPairs_100000.cool.h5 --outFileName log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 --operation log2ratio
+
+hicConvertFormat -m log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 -o log2Ratio_flx_BIC_ovr_NBQX.allValidPairs_100000.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+hicConvertFormat -m log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool.h5 -o log2Ratio_cKO_BIC_ovr_NBQX.allValidPairs_100000.cool --outputFormat cool --inputFormat h5 --resolutions 100000
+
+Rule 4: run snakemake 
