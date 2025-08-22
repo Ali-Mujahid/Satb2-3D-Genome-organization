@@ -23,7 +23,7 @@ genome=$(echo ${genome0##*/})
 reads1=$(echo ${reads10##*/})
 reads2=$(echo ${reads20##*/})
 
-cp /lisc/scratch/molevo/ali/dpse_proj/i-med/genome/${genome}* $TMPDIR
+cp /scratch/genome/${genome}* $TMPDIR
 cp $reads10 $reads20 $TMPDIR
 
 cd $TMPDIR
