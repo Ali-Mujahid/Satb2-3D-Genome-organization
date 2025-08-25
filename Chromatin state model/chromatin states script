@@ -1,1 +1,156 @@
+# Load required libraries
+library(tidyverse)
+library(GenomicRanges)
+library(ggplot2)
+library(ggpubr)
+library(pheatmap)
+library(reshape2)
 
+## Step 1: Prepare chromatin state data
+# Read chromatin state data
+chrom_states <- read_tsv("mouse_mm10.18Chromatin.states.model.bed", 
+                         col_names = c("chr", "start", "end", "chromatin_state"),
+                         comment = "#") %>%
+  mutate(chromatin_state = factor(chromatin_state, 
+                                  levels = c("Tss", "TssFlnk", "Tx", "TxWk", "EnhG", "Enh", 
+                                             "EnhLo", "EnhPois", "EnhPr", "TssBiv", "ReprPC", 
+                                             "ReprPCWk", "QuiesG", "Quies", "Quies2", "Quies3", 
+                                             "Quies4", "Het")))
+
+# Create GRanges object for chromatin states
+chrom_gr <- makeGRangesFromDataFrame(chrom_states, keep.extra.columns = TRUE)
+
+## Step 2: Process Satb2 peak files
+read_peaks <- function(file) {
+  read_tsv(file, col_names = c("chr", "start", "end", "peak_id")) %>%
+    mutate(peak_type = str_remove(basename(file), "\\.bed$"))
+}
+
+# Read all three peak files
+peak_files <- c("satb2.INV.bed", "satb2.gained.bed", "satb2.lost.bed")
+peaks <- map_dfr(peak_files, read_peaks)
+
+# Create GRanges object for peaks
+peaks_gr <- makeGRangesFromDataFrame(peaks, keep.extra.columns = TRUE)
+
+## Step 3: Calculate overlaps and enrichment
+# Find overlaps between peaks and chromatin states
+overlaps <- findOverlaps(peaks_gr, chrom_gr)
+
+# Create a data frame with peak-state overlaps
+peak_state_overlaps <- data.frame(
+  peak_id = peaks_gr[queryHits(overlaps)]$peak_id,
+  peak_type = peaks_gr[queryHits(overlaps)]$peak_type,
+  chromatin_state = chrom_gr[subjectHits(overlaps)]$chromatin_state
+)
+
+# Calculate enrichment (observed/expected)
+# First get total bp for each chromatin state
+state_lengths <- chrom_states %>%
+  mutate(length = end - start) %>%
+  group_by(chromatin_state) %>%
+  summarise(total_length = sum(length)) %>%
+  mutate(genome_fraction = total_length / sum(total_length))
+
+# Count peaks in each state
+peak_counts <- peak_state_overlaps %>%
+  group_by(peak_type, chromatin_state) %>%
+  summarise(observed = n(), .groups = "drop") %>%
+  complete(peak_type, chromatin_state, fill = list(observed = 0))
+
+# Calculate expected counts based on genome fraction
+peak_counts <- peak_counts %>%
+  left_join(state_lengths, by = "chromatin_state") %>%
+  group_by(peak_type) %>%
+  mutate(total_peaks = sum(observed),
+         expected = total_peaks * genome_fraction,
+         enrichment = observed / expected,
+         log2_enrichment = log2(enrichment)) %>%
+  ungroup()
+
+## Step 4: Create heatmap of enrichment scores
+# Prepare matrix for heatmap
+heatmap_data <- peak_counts %>%
+  select(peak_type, chromatin_state, log2_enrichment) %>%
+  pivot_wider(names_from = chromatin_state, values_from = log2_enrichment) %>%
+  column_to_rownames("peak_type") %>%
+  as.matrix()
+
+# Plot heatmap
+pheatmap(heatmap_data,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         color = colorRampPalette(c("#5e4fa2", "white", "#d53e4f"))(100),
+         main = "Satb2 enrichment across chromatin states",
+         angle_col = 90,
+         display_numbers = FALSE,
+         number_format = "%.1f")
+############## Zscore###########################
+# Read the pre-saved z-score matrix
+zscore_file <- "Satb2_chromatin_state_zscores.txt"
+zscore_matrix <- read_tsv(zscore_file) %>%
+  column_to_rownames(var = names(.)[1]) %>%
+  as.matrix()
+
+# Define color scale parameters
+color_breaks <- seq(-2, 3, length.out = 100)
+color_palette <- colorRampPalette(c("#5e4fa2", "white", "#d53e4f"))(100)
+
+# Perform t-tests for each chromatin state
+significance_matrix <- matrix(NA, nrow = nrow(zscore_matrix), ncol = ncol(zscore_matrix),
+                              dimnames = dimnames(zscore_matrix))
+
+for (state in colnames(zscore_matrix)) {
+  # One-sample t-test against null hypothesis (mean = 0)
+  test_result <- t.test(zscore_matrix[, state], mu = 0)
+  
+  # Determine significance
+  if (test_result$p.value < 0.001) {
+    sig_symbol <- "***"
+  } else if (test_result$p.value < 0.01) {
+    sig_symbol <- "**"
+  } else if (test_result$p.value < 0.05) {
+    sig_symbol <- "*"
+  } else {
+    sig_symbol <- "NS"
+  }
+  
+  # Add to significance matrix
+  significance_matrix[, state] <- sig_symbol
+}
+
+# Create combined matrix for display
+display_matrix <- matrix(paste0(round(zscore_matrix, 2), "\n", significance_matrix),
+                         nrow = nrow(zscore_matrix),
+                         dimnames = dimnames(zscore_matrix))
+
+# Create heatmap with significance stars
+heatmap_plot <- pheatmap(zscore_matrix,
+                         cluster_rows = FALSE,
+                         cluster_cols = FALSE,
+                         color = color_palette,
+                         breaks = color_breaks,
+                         main = "Satb2 Peak Z-score Enrichment\n(*p<0.05, **p<0.01, ***p<0.001, NS=Not Significant)",
+                         angle_col = 90,
+                         display_numbers = display_matrix,
+                         number_color = "black",
+                         fontsize_number = 8,
+                         fontsize_row = 10,
+                         fontsize_col = 10,
+                         cellwidth = 30,
+                         cellheight = 30)
+
+# Save the heatmap
+png(filename = "Satb2_chromatin_state_heatmap_significance.pdf",
+    width = 12, height = 7, units = "in", res = 300)
+print(heatmap_plot)
+dev.off()
+
+# Print confirmation
+cat("Heatmap with significance stars saved to:\n",
+    "Satb2_chromatin_state_heatmap_significance.pdf\n",
+    "Significance levels:\n",
+    "*** p < 0.001\n",
+    "** p < 0.01\n",
+    "* p < 0.05\n",
+    "NS Not Significant\n")
