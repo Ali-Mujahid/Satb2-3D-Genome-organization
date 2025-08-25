@@ -1,1 +1,61 @@
+############### Rawreads trimming ##################### 
+#!/bin/bash
 
+#SBATCH --job-name=fastp_b1
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=10G
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=03:30:00
+
+module load fastp
+
+R1=$1
+R2=$2
+out=$3
+fastp -i $R1 -I $R2 -o $out.fq_1.clean.gz -O $out.fq_2.clean.gz --phred64 --detect_adapter_for_pe --dedup --dup_calc_accuracy 3
+
+################# Alignment ######################## 
+#!/bin/bash
+
+#SBATCH --job-name=bowtie2
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=65
+#SBATCH --mem=30G
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=10:45:00
+
+module load samtools
+module load bowtie2
+module load bedtools
+
+genome0=$1
+reads10=$2
+reads20=$3
+size=$4
+dir=`pwd`
+
+genome=$(echo ${genome0##*/})
+reads1=$(echo ${reads10##*/})
+reads2=$(echo ${reads20##*/})
+
+cp /genome/${genome}* $TMPDIR
+cp $reads10 $reads20 $TMPDIR
+
+cd $TMPDIR
+
+# mapping the reads, select unique reads, and sort the bam file
+bowtie2 -p 4 --dovetail --local --very-sensitive-local --no-unal --no-mixed --no-discordant -q --phred33 -I 10 -X 700 -x $genome -1 $reads1 -2 $reads2 | samtools view -q 30 -hS - |  grep -e "^@" -e "XM:i:[012][^0-9]"  |  grep -v "XS:i:" | samtools sort -@ 4 -o $genome.$size.uniq.sorted.bam  - -O BAM
+samtools rmdup  $genome.$size.uniq.sorted.bam $genome.$size.uniq.sorted.rmdup.bam
+cp $genome.$size.uniq.sorted.rmdup.bam  $dir
+
+samtools index $genome.$size.uniq.sorted.rmdup.bam
+cp $genome.$size.uniq.sorted.rmdup.bam.bai $dir
+
+# count reads
+#bedtools genomecov -ibam $genome.$size.uniq.sorted.rmdup.bam -g $genome -d > $genome.$size.uniq.sorted.rmdup.bam.count
+
+## copy the results from $TMPDIR
+#cp $genome.$size.uniq.sorted.rmdup.bam.count $dir
