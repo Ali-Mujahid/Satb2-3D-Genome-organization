@@ -1,1 +1,36 @@
+############# Trimming and adaptor removal #################
 
+#!/bin/bash
+
+#SBATCH --job-name=fastp_b1
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=10G
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=03:30:00
+
+module load fastp
+
+R1=$1
+R2=$2
+out=$3
+fastp -i $R1 -I $R2 -o $out.fq_1.clean.gz -O $out.fq_2.clean.gz --phred64 --detect_adapter_for_pe --dedup --dup_calc_accuracy 3
+
+################  FASTQC  ################
+#!/bin/bash
+
+#SBATCH --job-name=fastqc
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=5G
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=00:50:00
+
+module load fastqc
+
+R1=$1
+R2=$2
+
+fastqc -o ./ --noextract -t 4 -f fastq $R1 $R2
