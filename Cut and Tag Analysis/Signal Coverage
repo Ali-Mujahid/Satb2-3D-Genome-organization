@@ -1,1 +1,37 @@
+############ Signal coverage with Input control ##########
+#!/bin/bash
 
+#SBATCH --job-name=bamComp
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=7000
+#SBATCH --mail-type=ALL
+#SBATCH --output=depth-%j.out
+#SBATCH --error=depth-%j.err
+#SBATCH --time=01:55:00
+
+chip=$1
+Input=$2
+size=$3
+
+#export PATH="/apps/python3/3.9.0/bin/:$PATH"
+
+module load deeptools
+#10.02.2022 new normalization with RPKM
+bamCompare -b1 $chip -b2 $Input -p 16 --effectiveGenomeSize 2700000000  --minMappingQuality 10 -bs 50 --scaleFactorsMethod None  -o $size.norm.bamCompare.bw --ignoreDuplicates --normalizeUsing RPKM
+
+############ Signal coverage without input ###############
+#!/bin/bash
+
+#SBATCH --job-name=bamCov
+#SBATCH --partition=basic
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=7000Mb
+#SBATCH --mail-user=mujahid.ali@univie.ac.at
+#SBATCH --output=Tm-%j.out
+#SBATCH --error=Tm-%j.err
+#SBATCH --time=01:45:00
+
+module load deeptools
+
+bamCoverage --bam sat_BIC_NBQX_12345_merge.uniq.sorted10sample.rmdup.bam --binSize 50 --normalizeUsing RPGC --effectiveGenomeSize 2700000000 -o sat_BIC_NBQX_12345_merge.uniq.sorted10sample.rmdup.bam.bw
